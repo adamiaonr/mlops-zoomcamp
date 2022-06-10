@@ -1,5 +1,9 @@
-import argparse
+import datetime
 import pandas as pd
+
+from dateutil.parser import parse
+from dateutil.relativedelta import relativedelta
+from pathlib import Path
 
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.linear_model import LinearRegression
@@ -8,6 +12,30 @@ from xgboost import train
 
 from prefect import task, flow, get_run_logger
 from prefect.task_runners import SequentialTaskRunner
+
+DATASET_PATH = "../data/fhv/fhv_tripdata_{year}-{month}.parquet"
+
+@task
+def get_paths(date:str) -> Path:
+  logger = get_run_logger()
+
+  # if date is None, take today's date
+  if not date:
+    date = datetime.date.today()
+  else:
+    date = parse(date)
+
+  # calculate train and validation date
+  train_date = date - relativedelta(months = 2)
+  val_date = date - relativedelta(months = 1)
+  
+  # use dates to generate train and validation paths
+  train_path = Path(DATASET_PATH.format(year = train_date.year, month = '{:02d}'.format(train_date.month)))
+  val_path = Path(DATASET_PATH.format(year = val_date.year, month = '{:02d}'.format(val_date.month)))
+
+  logger.info(f"{date} :\n\ttrain path: {train_path}\n\tvalidation path : {val_path}")
+
+  return train_path, val_path
 
 @task
 def read_data(path):
@@ -64,23 +92,9 @@ def run_model(df, categorical, dv, lr):
     return
 
 @flow(task_runner = SequentialTaskRunner())
-def main():
+def main(date:str = None):
 
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument(
-        "--train_path",
-        default="./data/fhv_tripdata_2021-01.parquet"
-    )
-    parser.add_argument(
-        "--val_path",
-        default="./data/fhv_tripdata_2021-02.parquet"
-    )
-
-    args = parser.parse_args()
-
-    train_path = args.train_path
-    val_path = args.val_path
+    train_path, val_path = get_paths(date).result()
 
     categorical = ['PUlocationID', 'DOlocationID']
 
@@ -95,4 +109,4 @@ def main():
     run_model(df_val_processed, categorical, dv, lr)
 
 if __name__ == '__main__':
-  main()
+  main(date = "2021-08-15")
