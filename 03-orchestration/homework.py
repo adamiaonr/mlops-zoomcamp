@@ -1,8 +1,10 @@
+import argparse
 import pandas as pd
 
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
+from xgboost import train
 
 def read_data(path):
     df = pd.read_parquet(path)
@@ -49,8 +51,23 @@ def run_model(df, categorical, dv, lr):
     print(f"The MSE of validation is: {mse}")
     return
 
-def main(train_path: str = './data/fhv_tripdata_2021-01.parquet', 
-           val_path: str = './data/fhv_tripdata_2021-02.parquet'):
+def main():
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "--train_path",
+        default="./data/fhv_tripdata_2021-01.parquet"
+    )
+    parser.add_argument(
+        "--val_path",
+        default="./data/fhv_tripdata_2021-02.parquet"
+    )
+
+    args = parser.parse_args()
+
+    train_path = args.train_path
+    val_path = args.val_path
 
     categorical = ['PUlocationID', 'DOlocationID']
 
@@ -64,4 +81,5 @@ def main(train_path: str = './data/fhv_tripdata_2021-01.parquet',
     lr, dv = train_model(df_train_processed, categorical)
     run_model(df_val_processed, categorical, dv, lr)
 
-main()
+if __name__ == '__main__':
+  main()
