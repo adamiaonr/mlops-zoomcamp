@@ -1,3 +1,4 @@
+import pickle
 import datetime
 import pandas as pd
 
@@ -14,6 +15,10 @@ from prefect import task, flow, get_run_logger
 from prefect.task_runners import SequentialTaskRunner
 
 DATASET_PATH = "../data/fhv/fhv_tripdata_{year}-{month}.parquet"
+
+def dump_pickle(obj, filename):
+    with open(filename, "wb") as f_out:
+        return pickle.dump(obj, f_out)
 
 @task
 def get_paths(date:str) -> Path:
@@ -91,7 +96,7 @@ def run_model(df, categorical, dv, lr):
     logger.info(f"The MSE of validation is: {mse}")
     return
 
-@flow(task_runner = SequentialTaskRunner())
+@flow
 def main(date:str = None):
 
     train_path, val_path = get_paths(date).result()
@@ -106,6 +111,11 @@ def main(date:str = None):
 
     # train the model
     lr, dv = train_model(df_train_processed, categorical).result()
+
+    # save lr and dv
+    dump_pickle(lr, f"./models/model-{date}.bin")
+    dump_pickle(dv, f"./models/dv-{date}.b")
+
     run_model(df_val_processed, categorical, dv, lr)
 
 if __name__ == '__main__':
