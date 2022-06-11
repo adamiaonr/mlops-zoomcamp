@@ -12,7 +12,9 @@ from sklearn.metrics import mean_squared_error
 from xgboost import train
 
 from prefect import task, flow, get_run_logger
-from prefect.task_runners import SequentialTaskRunner
+from prefect.deployments import DeploymentSpec
+from prefect.orion.schemas.schedules import CronSchedule
+from prefect.flow_runners import SubprocessFlowRunner
 
 DATASET_PATH = "../data/fhv/fhv_tripdata_{year}-{month}.parquet"
 
@@ -117,6 +119,16 @@ def main(date:str = None):
     dump_pickle(dv, f"./models/dv-{date}.b")
 
     run_model(df_val_processed, categorical, dv, lr)
+
+DeploymentSpec(
+    flow=main,
+    name="homework-03",
+    schedule=CronSchedule(
+        cron="0 9 15 * *",
+        timezone="Europe/Lisbon"),
+    flow_runner=SubprocessFlowRunner(),
+    tags = ['mlops-zoomcamp']
+)
 
 if __name__ == '__main__':
   main(date = "2021-08-15")
