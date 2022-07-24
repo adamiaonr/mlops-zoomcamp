@@ -13,7 +13,8 @@ Links
 
 ## Code snippets
 
-Sending data:
+### Sending data
+
 
 ```bash
 KINESIS_STREAM_INPUT=ride_events
@@ -58,7 +59,8 @@ aws kinesis put-record \
     }'
 ```
 
-Test event:
+### Test event
+
 
 ```json
 {
@@ -83,8 +85,7 @@ Test event:
 }
 ```
 
-
-Reading from the stream
+### Reading from the stream
 
 ```bash
 KINESIS_STREAM_OUTPUT='ride_predictions'
@@ -103,7 +104,8 @@ RESULT=$(aws kinesis get-records --shard-iterator $SHARD_ITERATOR)
 echo ${RESULT} | jq -r '.Records[0].Data' | base64 --decode
 ``` 
 
-Running the test
+
+### Running the test
 
 ```bash
 export PREDICTIONS_STREAM_NAME="ride_predictions"
@@ -113,8 +115,7 @@ export TEST_RUN="True"
 python test.py
 ```
 
-
-Putting everything to Docker
+### Putting everything to Docker
 
 ```bash
 docker build -t stream-model-duration:v1 .
@@ -126,7 +127,19 @@ docker run -it --rm \
     -e TEST_RUN="True" \
     -e AWS_DEFAULT_REGION="eu-west-1" \
     stream-model-duration:v1
+```
 
+URL for testing:
+
+* http://localhost:8080/2015-03-31/functions/function/invocations
+
+
+
+### Configuring AWS CLI to run in Docker
+
+To use AWS CLI, you may need to set the env variables:
+
+```bash
 docker run -it --rm \
     -p 8080:8080 \
     -e PREDICTIONS_STREAM_NAME="ride_predictions" \
@@ -138,10 +151,19 @@ docker run -it --rm \
     stream-model-duration:v1
 ```
 
-URL for testing:
+Alternatively, you can mount the `.aws` folder with your credentials to the `.aws` folder in the container:
 
-* http://localhost:8080/2015-03-31/functions/function/invocations
+```bash
+docker run -it --rm \
+    -p 8080:8080 \
+    -e PREDICTIONS_STREAM_NAME="ride_predictions" \
+    -e RUN_ID="e1efc53e9bd149078b0c12aeaa6365df" \
+    -e TEST_RUN="True" \
+    -v c:/Users/alexe/.aws:/root/.aws \
+    stream-model-duration:v1
+```
 
+### Publishing Docker images
 
 Creating an ECR repo
 
