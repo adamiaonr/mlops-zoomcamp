@@ -17,11 +17,6 @@ def prepare_data(data:pd.DataFrame, categorical:list[str]) -> pd.DataFrame:
     
     return data
 
-def read_data(filename:typing.Union[str, Path], categorical:list[str], options:dict = {}) -> pd.DataFrame:
-    df = pd.read_parquet(filename, storage_options=options)
-
-    return prepare_data(df, categorical)
-
 def get_s3_options() -> dict:
   s3_endpoint_url = os.getenv('S3_ENDPOINT_URL')
   if s3_endpoint_url:
@@ -34,6 +29,20 @@ def get_s3_options() -> dict:
     options = {}
 
   return options
+
+def save_data(data:pd.DataFrame, filename:typing.Union[str, Path], options:dict = {}):
+  data.to_parquet(
+      filename,
+      engine='pyarrow',
+      compression=None,
+      index=False,
+      storage_options=options
+  )
+
+def read_data(filename:typing.Union[str, Path], categorical:list[str], options:dict = {}) -> pd.DataFrame:
+    df = pd.read_parquet(filename, storage_options=options)
+
+    return prepare_data(df, categorical)
 
 def get_input_path(year:int, month:int) -> str:
   default_pattern = 'https://raw.githubusercontent.com/alexeygrigorev/datasets/master/nyc-tlc/fhv/fhv_tripdata_{year:04d}-{month:02d}.parquet'
@@ -51,12 +60,14 @@ def main(year:int, month:int):
   input_file = get_input_path(year, month)
   output_file = get_output_path(year, month)
   
-  with open('model.bin', 'rb') as f_in:
+  model_dir = os.getenv('MODEL_LOCATION', '.')
+  with open(Path(model_dir) / 'model.bin', 'rb') as f_in:
       dv, lr = pickle.load(f_in)
 
   categorical = ['PUlocationID', 'DOlocationID']
 
-  df = read_data(input_file, categorical, get_s3_options())
+  s3_options = get_s3_options()
+  df = read_data(input_file, categorical, options = s3_options)
   df['ride_id'] = f'{year:04d}/{month:02d}_' + df.index.astype('str')
 
   dicts = df[categorical].to_dict(orient='records')
@@ -69,7 +80,7 @@ def main(year:int, month:int):
   df_result['ride_id'] = df['ride_id']
   df_result['predicted_duration'] = y_pred
 
-  df_result.to_parquet(output_file, engine='pyarrow', index=False)
+  save_data(df_result, output_file, options = s3_options)
 
 if __name__ == '__main__':
   # year and month passed as arguments to the script
