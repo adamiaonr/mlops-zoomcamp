@@ -1,4 +1,4 @@
-## 6.X Homework
+## 6.7 Homework
 
 In this homework, we'll take the ride duration prediction model
 that we deployed in batch mode in homework 4 and improve the 
@@ -9,7 +9,7 @@ You'll find the starter code in the [homework](homework/) directory.
 
 ## Q1. Refactoring
 
-Before we can start coverting our code with tests, we need to 
+Before we can start converting our code with tests, we need to 
 refactor it. We'll start by getting rid of all the global variables. 
 
 * Let's create a function `main` with two parameters: `year` and
@@ -41,7 +41,7 @@ pipenv install --dev pytest
 ```
 
 Next, create a folder `tests` and create two files. One will be
-the file with tests. We can name if `test_batch.py`. 
+the file with tests. We can name it `test_batch.py`. 
 
 What should be the other file? 
 
@@ -57,10 +57,10 @@ We'll start with the pre-processing logic inside `read_data`.
 
 It's difficult to test right now because first reads
 the file and then performs some transformations. We need to split this 
-code into two parts: reading (I/O) and tranformation. 
+code into two parts: reading (I/O) and transformation. 
 
 So let's create a function `prepare_data` that takes in a dataframe 
-(and some other parameters too) and applies some tranformation to it.
+(and some other parameters too) and applies some transformation to it.
 
 (That's basically the entire `read_data` function after reading 
 the parquet file)
@@ -251,6 +251,11 @@ verify the result is correct.
 
 What's the sum of predicted durations for the test dataframe?
 
+- 23.05
+- 46.23
+- 69.28
+- 81.78
+
 
 ## Running the test (ungraded)
 
@@ -268,7 +273,7 @@ Let's do that!
 
 ## Deadline
 
-The deadline for submitting is 26 July 23:00 CEST. After that, the form will be closed.
+The deadline for submitting is 1 August 23:00 CEST. After that, the form will be closed.
 
 
 ## Solution
